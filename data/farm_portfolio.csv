@@ -1,0 +1,13 @@
+farmer_id,farmer_name,village,district,state,crop,land_acres,nearest_mandi,fpo_id
+F001,Raju Gowda,Kolar Gold Fields,Kolar,Karnataka,Tomato,4.5,Kolar,FPO_KAR_001
+F002,Lakshmi Devi,Srinivaspur,Kolar,Karnataka,Tomato,3.2,Kolar,FPO_KAR_001
+F003,Venkatesh M,Mulbagal,Kolar,Karnataka,Rice,6.0,Mulbagal,FPO_KAR_001
+F004,Suma Bai,Bangarpet,Kolar,Karnataka,Maize,2.8,Bangarpet,FPO_KAR_001
+F005,Krishna Reddy,Malur,Kolar,Karnataka,Tomato,5.1,Kolar,FPO_KAR_001
+F006,Parvathi N,Chintamani,Chikkaballapur,Karnataka,Potato,3.7,Chikkaballapur,FPO_KAR_001
+F007,Hanumaiah S,Sidlaghatta,Chikkaballapur,Karnataka,Maize,4.2,Chikkaballapur,FPO_KAR_001
+F008,Meena Kumari,Gowribidanur,Chikkaballapur,Karnataka,Rice,5.5,Gowribidanur,FPO_KAR_001
+F009,Basavaiah T,Bagepalli,Chikkaballapur,Karnataka,Tomato,2.9,Chikkaballapur,FPO_KAR_001
+F010,Savitha R,Gudibande,Chikkaballapur,Karnataka,Potato,3.3,Chikkaballapur,FPO_KAR_001
+F011,Nagaraju P,Robertsonpet,Kolar,Karnataka,Rice,7.0,Kolar,FPO_KAR_001
+F012,Kamala Devi,Pavagada,Tumkur,Karnataka,Maize,4.8,Pavagada,FPO_KAR_001

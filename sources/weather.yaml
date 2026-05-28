@@ -1,0 +1,66 @@
+name: weather
+version: 0.1.0
+dsl_version: 3
+backend: http
+base_url: "https://api.open-meteo.com"
+test_queries:
+  - SELECT * FROM weather.forecast WHERE latitude = 13.13 AND longitude = 78.13 LIMIT 1
+tables:
+  - name: forecast
+    description: >
+      7-day weather forecast for a given latitude/longitude.
+      Use to get rainfall and temperature for Karnataka farm districts.
+    request:
+      method: GET
+      path: /v1/forecast
+      query:
+        - name: latitude
+          from: filter
+          key: latitude
+        - name: longitude
+          from: filter
+          key: longitude
+        - name: daily
+          from: literal
+          value: "temperature_2m_max,temperature_2m_min,precipitation_sum,rain_sum,windspeed_10m_max"
+        - name: timezone
+          from: literal
+          value: "Asia/Kolkata"
+        - name: forecast_days
+          from: literal
+          value: "7"
+    response:
+      rows_path:
+        - daily
+    filters:
+      - name: latitude
+        type: Float64
+        required: true
+      - name: longitude
+        type: Float64
+        required: true
+    columns:
+      - name: latitude
+        type: Float64
+        description: Latitude used for the query
+      - name: longitude
+        type: Float64
+        description: Longitude used for the query
+      - name: time
+        type: Json
+        description: Array of forecast dates
+      - name: temperature_2m_max
+        type: Json
+        description: Max temperature per day in Celsius
+      - name: temperature_2m_min
+        type: Json
+        description: Min temperature per day in Celsius
+      - name: precipitation_sum
+        type: Json
+        description: Total precipitation per day in mm
+      - name: rain_sum
+        type: Json
+        description: Total rain per day in mm
+      - name: windspeed_10m_max
+        type: Json
+        description: Max wind speed per day in km/h

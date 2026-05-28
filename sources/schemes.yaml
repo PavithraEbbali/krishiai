@@ -1,0 +1,46 @@
+name: schemes
+version: 0.1.0
+dsl_version: 3
+backend: jsonl
+test_queries:
+  - SELECT * FROM schemes.gov_schemes LIMIT 1
+tables:
+  - name: gov_schemes
+    description: >
+      Indian government agricultural schemes and subsidies.
+      Includes PM-KISAN PMFBY RKVY NHM and Karnataka state schemes.
+      Join with farm portfolio to find schemes each farmer is eligible for.
+    source:
+      location: "file:///C:/Users/pavit/kisan-intelligence/data/"
+      glob: "gov_schemes.jsonl"
+    columns:
+      - name: scheme_id
+        type: Utf8
+        description: Unique scheme identifier
+      - name: scheme_name
+        type: Utf8
+        description: Short name of the scheme
+      - name: full_name
+        type: Utf8
+        description: Full official name of the scheme
+      - name: eligible_crops
+        type: Utf8
+        description: Comma separated eligible crops or All
+      - name: state
+        type: Utf8
+        description: State this scheme applies to or All for national
+      - name: benefit_type
+        type: Utf8
+        description: Type of benefit
+      - name: subsidy_amount
+        type: Utf8
+        description: Amount or percentage of benefit
+      - name: application_deadline
+        type: Utf8
+        description: Last date to apply
+      - name: scheme_url
+        type: Utf8
+        description: Official website
+      - name: description
+        type: Utf8
+        description: Brief description of the scheme

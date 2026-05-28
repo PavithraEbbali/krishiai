@@ -1,0 +1,64 @@
+name: mandi
+version: 0.1.0
+dsl_version: 3
+backend: http
+base_url: "https://api.data.gov.in"
+inputs:
+  MANDI_API_KEY:
+    kind: secret
+    hint: API key from data.gov.in
+test_queries:
+  - SELECT * FROM mandi.prices LIMIT 1
+tables:
+  - name: prices
+    description: >
+      Daily mandi prices for agricultural commodities across India.
+      Includes crop name, market, state, district, min/max/modal price per quintal in INR
+      and arrival date. Source - Agmarknet via data.gov.in
+    request:
+      method: GET
+      path: /resource/9ef84268-d588-465a-a308-a864a43d0070
+      query:
+        - name: api-key
+          from: input
+          key: MANDI_API_KEY
+        - name: format
+          from: literal
+          value: "json"
+        - name: limit
+          from: literal
+          value: "500"
+    response:
+      rows_path:
+        - records
+    columns:
+      - name: state
+        type: Utf8
+        description: State name
+      - name: district
+        type: Utf8
+        description: District name
+      - name: market
+        type: Utf8
+        description: Mandi market name
+      - name: commodity
+        type: Utf8
+        description: Crop or commodity name
+      - name: variety
+        type: Utf8
+        description: Variety of the commodity
+      - name: grade
+        type: Utf8
+        description: Grade of the commodity
+      - name: arrival_date
+        type: Utf8
+        description: Date of price recording
+      - name: min_price
+        type: Utf8
+        description: Minimum price per quintal in INR
+      - name: max_price
+        type: Utf8
+        description: Maximum price per quintal in INR
+      - name: modal_price
+        type: Utf8
+        description: Modal price per quintal in INR
