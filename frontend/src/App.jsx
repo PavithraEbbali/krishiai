@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react"
 import axios from "axios"
 
-const API = "https://krishiai-production-0ac0.up.railway.app"
+const API = "http://localhost:8000"
 
 /* ────────────────────────────────────────────────────────────
    KRISHI AI · Enterprise AI Platform for FPOs  (dark theme)
