@@ -3,10 +3,7 @@
 > **AI-powered enterprise platform for Farmer Producer Organisations (FPOs) in Karnataka, India.**
 > Natural language → Coral SQL → Live data → Actionable insights.
 
-<<<<<<< Updated upstream
-=======
 
->>>>>>> Stashed changes
 [![Built with Coral](https://img.shields.io/badge/Powered%20by-Coral-orange?style=flat-square)](https://coral.so)
 [![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688?style=flat-square&logo=fastapi)](https://fastapi.tiangolo.com)
 [![React](https://img.shields.io/badge/Frontend-React%2019-61DAFB?style=flat-square&logo=react)](https://react.dev)
