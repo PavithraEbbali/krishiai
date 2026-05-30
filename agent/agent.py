@@ -12,6 +12,83 @@ client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 FARMERS_DS = "36c30c1b-5668-80bf-8284-000b52d4d5c1"
 TODAY = date.today().strftime("%d/%m/%Y")
  
+# ── HARDCODED SCHEMES KNOWLEDGE ────────────────────────────────
+# schemes.gov_schemes is not registered in Coral so we answer
+# scheme-related chat questions directly from this data.
+SCHEMES_KNOWLEDGE = """
+Available government schemes for Karnataka farmers:
+ 
+1. PM-KISAN (Pradhan Mantri Kisan Samman Nidhi)
+   - Eligible crops: All crops
+   - Benefit: Direct cash transfer of Rs.6,000 per year
+   - Deadline: 2026-06-30
+ 
+2. PMFBY (Pradhan Mantri Fasal Bima Yojana)
+   - Eligible crops: Tomato, Rice, Maize, Potato
+   - Benefit: Crop insurance up to Rs.2 lakh per claim
+   - Deadline: 2026-06-15
+ 
+3. RKVY (Rashtriya Krishi Vikas Yojana)
+   - Eligible crops: All crops
+   - Benefit: Infrastructure grant up to Rs.50,000 per farmer
+   - Deadline: 2026-07-31
+ 
+4. Raitha Siri (Karnataka Raitha Siri)
+   - Eligible crops: Tomato, Potato, Onion
+   - Benefit: Price support up to Rs.30,000 per season
+   - Deadline: 2026-06-20
+ 
+5. NHM (National Horticulture Mission)
+   - Eligible crops: Tomato, Potato
+   - Benefit: Subsidy on inputs Rs.25,000 per hectare
+   - Deadline: 2026-08-15
+ 
+6. SMAM (Sub Mission on Agricultural Mechanization)
+   - Eligible crops: Rice, Maize
+   - Benefit: Equipment subsidy 50% up to Rs.1 lakh
+   - Deadline: 2026-09-30
+ 
+7. PKVY (Paramparagat Krishi Vikas Yojana)
+   - Eligible crops: All crops
+   - Benefit: Organic farming support Rs.50,000 per hectare over 3 years
+   - Deadline: 2026-07-15
+ 
+8. AIF (Agriculture Infrastructure Fund)
+   - Eligible crops: All crops
+   - Benefit: Loan with 3% interest subvention up to Rs.2 crore
+   - Deadline: 2026-12-31
+"""
+ 
+def _is_scheme_question(question: str) -> bool:
+    keywords = ["scheme", "schemes", "subsidy", "pm-kisan", "pmfby", "rkvy",
+                "raitha siri", "nhm", "smam", "pkvy", "aif", "benefit",
+                "insurance", "grant", "apply", "eligible", "deadline"]
+    q = question.lower()
+    return any(k in q for k in keywords)
+ 
+ 
+def answer_scheme_question(question: str) -> str:
+    response = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[
+            {
+                "role": "system",
+                "content": (
+                    "You are Krishi AI, a friendly assistant for Karnataka farmers. "
+                    "Answer questions about government schemes using ONLY the information "
+                    "provided below. Be specific, helpful and mention amounts and deadlines. "
+                    "Use the rupee symbol for amounts. Keep it under 4 sentences.\n\n"
+                    + SCHEMES_KNOWLEDGE
+                )
+            },
+            {"role": "user", "content": question}
+        ],
+        temperature=0.3,
+        max_tokens=300
+    )
+    return response.choices[0].message.content.strip()
+ 
+ 
 # ── FIXED SQL FOR DASHBOARD ENDPOINTS ─────────────────────────
 BRIEFING_SQL_TODAY = f"""
 SELECT json_get_str(p.properties, 'farmer_name', 'rich_text', 0, 'plain_text') AS farmer_name,
@@ -122,17 +199,11 @@ def generate_sql(user_question: str) -> str:
  
 def summarise_results(user_question: str, sql: str, results: str,
                       is_chat: bool = False) -> str:
-    """
-    Convert raw SQL results into plain English.
-    is_chat=True → friendlier tone, handles empty results gracefully
-                   instead of blocking with a hard error.
-    """
     if is_chat and _looks_empty(results):
-        # For chat questions, give a helpful human answer even when empty
         system_msg = (
             "You are Krishi AI, a friendly assistant for Karnataka farmers. "
             "The SQL query returned no results. Give a short, helpful, empathetic "
-            "response in simple English explaining that the data isn't available "
+            "response in simple English explaining that the data is not available "
             "right now from the government mandi source, and suggest the farmer "
             "try again later or check a local mandi. "
             "Never make up prices. Keep it under 3 sentences."
@@ -143,7 +214,7 @@ def summarise_results(user_question: str, sql: str, results: str,
             "You are Kisan Intelligence, an AI assistant for a Karnataka Farmer "
             "Producer Organisation. Convert SQL results into a clear, helpful answer "
             "in simple English. Be specific with numbers, names, and prices. "
-            "Keep it under 5 sentences. Use ₹ for rupees.\n\n"
+            "Keep it under 5 sentences. Use the rupee symbol for prices.\n\n"
             "CRITICAL RULES:\n"
             "- Use ONLY names, crops, districts and prices that appear in the Results.\n"
             "- NEVER invent or guess any value.\n"
@@ -171,61 +242,63 @@ def summarise_results(user_question: str, sql: str, results: str,
  
  
 def ask_kisan(question: str, is_chat: bool = False) -> dict:
-    """
-    Main agent function.
-    is_chat=True  → free-form chat (/ask endpoint): friendly empty handling
-    is_chat=False → dashboard endpoints: strict empty-guard
-    """
     print(f"\n🌾 Question: {question}")
-    print("─" * 50)
+    print("-" * 50)
+ 
+    # ── SCHEME QUESTIONS: answer from knowledge base, skip Coral ──
+    if is_chat and _is_scheme_question(question):
+        print("📚 Answering from schemes knowledge base...")
+        summary = answer_scheme_question(question)
+        print(f"✅ Answer:\n{summary}\n")
+        return {
+            "question": question,
+            "sql":      "-- Answered from schemes knowledge base",
+            "results":  SCHEMES_KNOWLEDGE,
+            "summary":  summary
+        }
  
     fixed = pick_fixed_sql(question)
  
     if fixed:
         sql_dated, sql_any = fixed
  
-        print(f"⚙️  Using fixed SQL (date: {TODAY})...")
-        print(f"📝 SQL:\n{sql_dated}\n")
-        print("🔍 Running query via Coral...")
+        print(f"Using fixed SQL (date: {TODAY})...")
+        print(f"SQL:\n{sql_dated}\n")
+        print("Running query via Coral...")
         results = run_coral_query(sql_dated)
-        print(f"📊 Raw Results:\n{results}\n")
+        print(f"Raw Results:\n{results}\n")
  
-        # If farmers show but prices are all blank, retry without date filter
         if not _looks_empty(results) and not _has_price_data(results):
-            print("⚠️  Prices blank for today — retrying without date filter...")
+            print("Prices blank for today — retrying without date filter...")
             results_any = run_coral_query(sql_any)
-            print(f"📊 Raw Results (no date):\n{results_any}\n")
+            print(f"Raw Results (no date):\n{results_any}\n")
             if _has_price_data(results_any):
                 results = results_any
                 sql_dated = sql_any
-                print("✅ Got prices from undated query.")
  
         sql = sql_dated
  
-        print("🤖 Generating answer...")
+        print("Generating answer...")
         if _looks_empty(results):
             summary = (
                 "No data is available right now. The live mandi price source "
                 "returned no rows — please try again in a moment."
             )
-            print(f"✅ Answer (empty-guard):\n{summary}\n")
         else:
             summary = summarise_results(question, sql, results, is_chat=False)
-            print(f"✅ Answer:\n{summary}\n")
+        print(f"Answer:\n{summary}\n")
  
     else:
-        # Free-form question — generate SQL with LLM
-        print("⚙️  Generating Coral SQL...")
+        print("Generating Coral SQL...")
         sql = generate_sql(question)
-        print(f"📝 SQL:\n{sql}\n")
-        print("🔍 Running query via Coral...")
+        print(f"SQL:\n{sql}\n")
+        print("Running query via Coral...")
         results = run_coral_query(sql)
-        print(f"📊 Raw Results:\n{results}\n")
+        print(f"Raw Results:\n{results}\n")
  
-        print("🤖 Generating answer...")
-        # For chat: always generate a human answer, even on empty results
+        print("Generating answer...")
         summary = summarise_results(question, sql, results, is_chat=is_chat)
-        print(f"✅ Answer:\n{summary}\n")
+        print(f"Answer:\n{summary}\n")
  
     return {
         "question": question,
@@ -242,3 +315,4 @@ if __name__ == "__main__":
     for q in questions:
         ask_kisan(q)
         print("=" * 60)
+ 
